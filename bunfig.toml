@@ -1,0 +1,2 @@
+preload = ["./src/lib/preload.ts"]
+

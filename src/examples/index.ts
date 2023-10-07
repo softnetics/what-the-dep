@@ -3,24 +3,25 @@ import { container } from "../lib/di";
 import { ITest0, Test0 } from "./modules/test0";
 import { ITest1, Test1 } from "./modules/test1";
 
-container.register<ITest1, Test1>();
-container.register<Test1>();
+container.register<ITest0, Test0>();
 
-container.registerSingleton<ITest0, Test0>();
+container.registerSingleton<ITest1, Test1>();
 
 class Test2 {
-  constructor(private test1: Test1) {}
+  constructor(private test1: ITest1) {}
 }
 
 class Test3 {
   constructor(
     private test2: Test2,
-    private test1: Test1,
+    private test1: ITest1,
   ) {}
 }
 
-container.register<Test2, Test2>();
-container.register<Test3, Test3>();
+container.register<Test2, Test2>(async (context) => {
+  return new Test2(context.get<Test1>());
+});
+container.registerSingleton<Test3, Test3>();
 
 interface ITest4 {
   test1: Test1;

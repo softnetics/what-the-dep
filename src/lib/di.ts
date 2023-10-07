@@ -7,14 +7,14 @@ class MockClass {
 class Context {
   REAL_DI_CONTEXT: true = true;
 
-  get<T extends any>(): T {
+  asyncFactory: Map<string, Function> = new Map();
+
+  get<T extends any>(typeHash?: string): T {
     return {} as T;
   }
 
-  set<T extends any>(value: T): void {}
-
-  moduleFactory<T extends any>(typeHash: string): T {
-    return {} as T;
+  set(typeHash: string, initiator: Function): void {
+    this.asyncFactory.set(typeHash, initiator);
   }
 }
 
@@ -25,7 +25,11 @@ class Container {
   register<T, P extends T | never = never>(
     factory?: (c: Context) => Promise<P>,
     typeHash?: string,
-  ): void {}
+  ): void {
+    if (factory && typeHash) {
+      this.context.set(typeHash, factory);
+    }
+  }
 
   registerSingleton<T, P extends T>(
     factory?: (c: Context) => Promise<P>,

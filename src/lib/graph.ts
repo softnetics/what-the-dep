@@ -2,7 +2,6 @@ import ts from "typescript";
 
 export enum ModuleKind {
   SINGLETON = "SINGLETON",
-  ASYNC = "ASYNC",
   TRANSIENT = "TRANSIENT",
 }
 
@@ -10,15 +9,18 @@ export class Module {
   hash: string;
   dependencies: string[];
   kind: ModuleKind;
+  isAsync: boolean;
 
   constructor(
     typeHash: string,
     dependencies: string[],
     kind: ModuleKind = ModuleKind.TRANSIENT,
+    isAsync: boolean = false,
   ) {
     this.hash = typeHash;
     this.kind = kind;
     this.dependencies = dependencies;
+    this.isAsync = isAsync;
   }
 }
 
@@ -30,6 +32,32 @@ export class DependenciesGraph {
 
   convertHashToSymbol(from: string): ts.Symbol | undefined {
     return this.hashToSymbol.get(from);
+  }
+
+  getInitDependenciesOf(hash: string): Module[] {
+    const visited = new Set<string>();
+    const stack: Module[] = [];
+    const module = this.modules.get(hash);
+    if (!module) {
+      throw new Error(`Module with hash ${hash} not found`);
+    }
+
+    const visit = (module: Module) => {
+      if (!visited.has(module.hash)) {
+        visited.add(module.hash);
+        module.dependencies.forEach((depHash) => {
+          const depModule = this.modules.get(depHash);
+          if (depModule) {
+            visit(depModule);
+          }
+        });
+        stack.push(module);
+      }
+    };
+
+    visit(module);
+
+    return stack;
   }
 
   getDependencies(from: string): Module[] {
@@ -101,6 +129,32 @@ export class DependenciesGraph {
     };
 
     visit(startModule);
+
+    return stack;
+  }
+
+  getSingletonDependencySorted(): Module[] {
+    const visited = new Set<string>();
+    const stack: Module[] = [];
+
+    const visit = (module: Module) => {
+      if (!visited.has(module.hash)) {
+        visited.add(module.hash);
+        module.dependencies.forEach((depHash) => {
+          const depModule = this.modules.get(depHash);
+          if (depModule) {
+            visit(depModule);
+          }
+        });
+        stack.push(module);
+      }
+    };
+
+    this.modules.forEach((module) => {
+      if (module.kind === ModuleKind.SINGLETON) {
+        visit(module);
+      }
+    });
 
     return stack;
   }

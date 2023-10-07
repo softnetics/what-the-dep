@@ -83,16 +83,16 @@ export function resolver(
                   //   dependenciesGraph.addFactory(dependencyTypeSymbol, factory);
                   // }
                   //
-                  const moduleKind = factory
-                    ? ModuleKind.ASYNC
-                    : methodName === "register"
-                    ? ModuleKind.TRANSIENT
-                    : ModuleKind.SINGLETON;
+                  const moduleKind =
+                    methodName === "register"
+                      ? ModuleKind.TRANSIENT
+                      : ModuleKind.SINGLETON;
 
                   const currentModule = new Module(
                     hashSymbol(dependencyTypeSymbol),
                     parameterTypes.map((c) => hashSymbol(c.getSymbol())),
                     moduleKind,
+                    !!factory,
                   );
 
                   // add module to graph

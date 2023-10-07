@@ -1,6 +1,6 @@
 import ts from "typescript";
 import path from "path";
-import { DependenciesGraph } from "../graph";
+import { DependenciesGraph, ModuleKind } from "../graph";
 import { createImportFromSymbol, shortHash, toCamelCase } from "../utils";
 
 export function generate(
@@ -13,6 +13,7 @@ export function generate(
     return (sourceFile: ts.SourceFile) => {
       let statements: ts.NodeArray<ts.Statement> = sourceFile.statements;
 
+      const addedModuleHashes: string[] = [];
       const addStatements: ts.Statement[] = [];
       const removeStatements: ts.Statement[] = [];
 
@@ -26,10 +27,12 @@ export function generate(
           const constructorExpression = [];
           const initiated = [];
 
-          for (const module of dependenciesGraph.topologicalSort()) {
+          for (const module of dependenciesGraph.getSingletonDependencySorted()) {
+            // initiate all singletons
             const dependency = dependenciesGraph.convertHashToSymbol(
               module.hash,
             );
+            addedModuleHashes.push(module.hash);
             const [importDeclaration, modifiedClass] = createImportFromSymbol(
               dependency,
               node.getSourceFile().fileName,
@@ -50,20 +53,41 @@ export function generate(
 
             const dependencies = dependenciesGraph.getDependencies(module.hash);
 
-            const classInit = ts.factory.createNewExpression(
-              ts.factory.createIdentifier(dependency.getName()),
-              undefined,
-              dependencies.map((d) =>
-                ts.factory.createElementAccessExpression(
-                  ts.factory.createThis(),
-                  ts.factory.createStringLiteral(toCamelCase(d.hash)),
-                ),
-              ),
-            );
+            // if async get the factory from asyncFactory if not get the class
+            const classInit = module.isAsync
+              ? ts.factory.createAwaitExpression(
+                  ts.factory.createCallExpression(
+                    ts.factory.createCallExpression(
+                      ts.factory.createPropertyAccessExpression(
+                        ts.factory.createPropertyAccessExpression(
+                          ts.factory.createThis(),
+                          ts.factory.createIdentifier("asyncFactory"),
+                        ),
+                        ts.factory.createIdentifier("get"),
+                      ),
+                      undefined,
+                      [ts.factory.createStringLiteral(module.hash)],
+                    ),
+                    undefined,
+                    [],
+                  ),
+                )
+              : ts.factory.createNewExpression(
+                  ts.factory.createIdentifier(dependency.getName()),
+                  undefined,
+                  dependencies.map((d) =>
+                    d.kind === ModuleKind.SINGLETON
+                      ? ts.factory.createElementAccessExpression(
+                          ts.factory.createThis(),
+                          ts.factory.createStringLiteral(d.hash),
+                        )
+                      : ts.factory.createIdentifier(`transient_${d.hash}`),
+                  ),
+                );
 
             const leftSide = ts.factory.createElementAccessExpression(
               ts.factory.createThis(),
-              ts.factory.createStringLiteral(toCamelCase(module.hash)),
+              ts.factory.createStringLiteral(module.hash),
             );
             const assignmentStatement = ts.factory.createExpressionStatement(
               ts.factory.createBinaryExpression(
@@ -73,14 +97,34 @@ export function generate(
               ),
             );
 
-            initiated.push(assignmentStatement);
+            // Create the variable declaration: a = new b()
+            const variableDeclaration = ts.factory.createVariableDeclaration(
+              ts.factory.createIdentifier(`transient_${module.hash}`), // Variable name
+              undefined, // Type (none in this case)
+              undefined, // Type node (none in this case)
+              classInit, // Initializer
+            );
 
-            constructorExpression.push(assignmentStatement);
+            // Create the full statement: const a = new b();
+            const variableStatement = ts.factory.createVariableStatement(
+              [],
+              ts.factory.createVariableDeclarationList(
+                [variableDeclaration],
+                ts.NodeFlags.Const,
+              ), // Variable declaration list
+            );
+
+            constructorExpression.push(
+              module.kind === ModuleKind.SINGLETON
+                ? assignmentStatement
+                : variableStatement,
+            );
           }
-          const newMethod = ts.factory.createMethodDeclaration(
-            undefined, // modifiers
+
+          const singletonsInit = ts.factory.createMethodDeclaration(
+            [ts.factory.createModifier(ts.SyntaxKind.AsyncKeyword)], // modifiers
             undefined, // asteriskToken
-            "constructor", // name
+            "initSingletons", // name
             undefined, // questionToken
             undefined, // typeParameters
             [], // parameters
@@ -88,10 +132,63 @@ export function generate(
             ts.factory.createBlock(constructorExpression),
           );
 
+          const moduleCases = [];
+
+          for (const module of dependenciesGraph.topologicalSort()) {
+            const statements = [];
+            if (module.kind === ModuleKind.SINGLETON) {
+              statements.push(
+                ts.factory.createReturnStatement(
+                  ts.factory.createElementAccessExpression(
+                    ts.factory.createThis(),
+                    ts.factory.createStringLiteral(module.hash),
+                  ),
+                ),
+              );
+            }
+
+            if (module.kind === ModuleKind.TRANSIENT) {
+              const dependencies = dependenciesGraph.getInitDependenciesOf(
+                module.hash,
+              );
+              for (const dependency of dependencies) {
+              }
+            }
+            moduleCases.push(
+              ts.factory.createCaseClause(
+                ts.factory.createStringLiteral(module.hash),
+                statements,
+              ),
+            );
+            // all modules
+          }
+
+          const getMethod = ts.factory.createMethodDeclaration(
+            [ts.factory.createModifier(ts.SyntaxKind.AsyncKeyword)],
+            undefined, // asteriskToken
+            "get", // name
+            undefined, // questionToken
+            undefined, // typeParameters
+            [
+              ts.factory.createParameterDeclaration(
+                undefined,
+                undefined,
+                "typeHash",
+              ),
+            ], // parameters
+            undefined, // type
+            ts.factory.createBlock([
+              ts.factory.createSwitchStatement(
+                ts.factory.createIdentifier("typeHash"),
+                ts.factory.createCaseBlock(moduleCases),
+              ),
+            ]),
+          );
           // Add the new method to the class
           const updatedMembers = ts.factory.createNodeArray([
-            ...node.members,
-            newMethod,
+            ...node.members.filter((m) => m.name.getText() != "get"),
+            singletonsInit,
+            getMethod,
           ]);
           const updatedClass = ts.factory.createClassDeclaration(
             node.modifiers,

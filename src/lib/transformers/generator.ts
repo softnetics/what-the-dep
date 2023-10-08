@@ -13,7 +13,6 @@ export function generate(
   dependenciesGraph: DependenciesGraph,
 ) {
   const checker = program.getTypeChecker();
-  console.log("GENERATE");
   return (context: ts.TransformationContext) => {
     return (sourceFile: ts.SourceFile) => {
       function traverseFunctionArgBody(
@@ -69,7 +68,18 @@ export function generate(
         ) {
           // found context
           // add dependency to get
-          const constructorExpression = [];
+          const constructorExpression = [
+            ts.factory.createExpressionStatement(
+              ts.factory.createBinaryExpression(
+                ts.factory.createPropertyAccessExpression(
+                  ts.factory.createThis(),
+                  ts.factory.createIdentifier("isInitialized"),
+                ),
+                ts.factory.createToken(ts.SyntaxKind.EqualsToken),
+                ts.factory.createTrue(),
+              ),
+            ),
+          ];
 
           for (const module of dependenciesGraph.topologicalSort()) {
             // TODO: tree shaking
@@ -166,9 +176,9 @@ export function generate(
             );
 
             constructorExpression.push(
-              module.kind === ModuleKind.SINGLETON
+              (module.kind === ModuleKind.SINGLETON
                 ? assignmentStatement
-                : variableStatement,
+                : variableStatement) as ts.ExpressionStatement,
             );
           }
 
@@ -407,7 +417,7 @@ export function generate(
             ...node.members.filter(
               (m) =>
                 m.name.getText() != "get" &&
-                m.name.getText() != "singletonsInit",
+                m.name.getText() != "initSingletons",
             ),
             singletonsInit,
             getMethod,

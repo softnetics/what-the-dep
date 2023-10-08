@@ -6,9 +6,6 @@ export function resolver(
   dependenciesGraph: DependenciesGraph,
 ) {
   const checker = program.getTypeChecker();
-
-  console.log("RESOLVE");
-
   return (context: ts.TransformationContext) => {
     return (sourceFile: ts.SourceFile) => {
       function visit(node: ts.Node): ts.Node {
@@ -64,7 +61,7 @@ export function resolver(
                 .getChildren()
                 [classNameIndex + 1].getText();
 
-              console.log("Found class", className, "with hash", typeHash);
+              // console.log("Resolve", className, "with hash", typeHash);
 
               if (ts.isClassLike(dependencyDeclaration)) {
                 // dependency is a class find constructor
@@ -72,17 +69,32 @@ export function resolver(
                   (member) => ts.isConstructorDeclaration(member),
                 );
 
-                if (ts.isConstructorDeclaration(constructor)) {
+                if (!constructor) {
+                  const moduleKind =
+                    methodName === "register"
+                      ? ModuleKind.TRANSIENT
+                      : ModuleKind.SINGLETON;
+
+                  const currentModule = new Module(
+                    hashSymbol(dependencyTypeSymbol),
+                    [],
+                    moduleKind,
+                    !!factory,
+                  );
+
+                  // add module to graph
+                  dependenciesGraph.addModule(currentModule);
+                  // map interface to class
+                  dependenciesGraph.addDependency(
+                    hashSymbol(dependencyTypeSymbol),
+                    dependencySymbol,
+                  );
+                } else if (ts.isConstructorDeclaration(constructor)) {
                   const parameters = constructor.parameters;
                   const parameterTypes = parameters.map((parameter) => {
                     return checker.getTypeAtLocation(parameter);
                   });
 
-                  //
-                  // if (factory) {
-                  //   dependenciesGraph.addFactory(dependencyTypeSymbol, factory);
-                  // }
-                  //
                   const moduleKind =
                     methodName === "register"
                       ? ModuleKind.TRANSIENT
@@ -102,14 +114,6 @@ export function resolver(
                     hashSymbol(dependencyTypeSymbol),
                     dependencySymbol,
                   );
-
-                  //
-                  // if (methodName === "registerSingleton") {
-                  //   dependenciesGraph.addSingleton(
-                  //     dependencyTypeSymbol,
-                  //     dependencySymbol,
-                  //   );
-                  // }
                 }
               }
             }

@@ -355,7 +355,31 @@ export function generate(
             );
             // all modules
           }
+          const condition = ts.factory.createPrefixUnaryExpression(
+            ts.SyntaxKind.ExclamationToken,
+            ts.factory.createPropertyAccessExpression(
+              ts.factory.createThis(),
+              ts.factory.createIdentifier("isInitialized"),
+            ),
+          );
 
+          const thenStatement = ts.factory.createExpressionStatement(
+            ts.factory.createAwaitExpression(
+              ts.factory.createCallExpression(
+                ts.factory.createPropertyAccessExpression(
+                  ts.factory.createThis(),
+                  ts.factory.createIdentifier("initSingletons"),
+                ),
+                undefined,
+                [],
+              ),
+            ),
+          );
+
+          const ifStatement = ts.factory.createIfStatement(
+            condition,
+            thenStatement,
+          );
           const getMethod = ts.factory.createMethodDeclaration(
             [ts.factory.createModifier(ts.SyntaxKind.AsyncKeyword)],
             undefined, // asteriskToken
@@ -371,6 +395,7 @@ export function generate(
             ], // parameters
             undefined, // type
             ts.factory.createBlock([
+              ifStatement,
               ts.factory.createSwitchStatement(
                 ts.factory.createIdentifier("typeHash"),
                 ts.factory.createCaseBlock(moduleCases),
@@ -379,7 +404,11 @@ export function generate(
           );
           // Add the new method to the class
           const updatedMembers = ts.factory.createNodeArray([
-            ...node.members.filter((m) => m.name.getText() != "get"),
+            ...node.members.filter(
+              (m) =>
+                m.name.getText() != "get" &&
+                m.name.getText() != "singletonsInit",
+            ),
             singletonsInit,
             getMethod,
           ]);

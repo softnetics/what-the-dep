@@ -6,10 +6,14 @@ class MockClass {
 
 class Context {
   REAL_DI_CONTEXT: true = true;
+  isInitialized = false;
 
   asyncFactory: Map<string, Function> = new Map();
 
   async get<T extends any>(typeHash?: string): Promise<T> {
+    if (!this.isInitialized) {
+      await this.initSingletons();
+    }
     return {} as T;
   }
 

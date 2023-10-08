@@ -9,7 +9,7 @@ class Context {
 
   asyncFactory: Map<string, Function> = new Map();
 
-  get<T extends any>(typeHash?: string): T {
+  async get<T extends any>(typeHash?: string): Promise<T> {
     return {} as T;
   }
 
@@ -36,8 +36,8 @@ class Container {
     typeHash?: string,
   ): void {}
 
-  get<T extends any>(): T {
-    return {} as T;
+  async get<T extends any>(typeHash?: string): Promise<T> {
+    return (await this.context.get(typeHash)) as T;
   }
 }
 

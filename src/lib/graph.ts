@@ -34,6 +34,10 @@ export class DependenciesGraph {
     return this.hashToSymbol.get(from);
   }
 
+  getModule(hash: string): Module | undefined {
+    return this.modules.get(hash);
+  }
+
   getInitDependenciesOf(hash: string): Module[] {
     const visited = new Set<string>();
     const stack: Module[] = [];

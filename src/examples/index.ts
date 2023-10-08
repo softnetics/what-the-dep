@@ -5,7 +5,7 @@ import { ITest1, Test1 } from "./modules/test1";
 
 container.register<ITest0, Test0>();
 
-container.registerSingleton<ITest1, Test1>();
+container.register<ITest1, Test1>();
 
 class Test2 {
   constructor(private test1: ITest1) {}
@@ -18,9 +18,7 @@ class Test3 {
   ) {}
 }
 
-container.register<Test2, Test2>(async (context) => {
-  return new Test2(context.get<Test1>());
-});
+container.register<Test2, Test2>();
 container.registerSingleton<Test3, Test3>();
 
 interface ITest4 {
@@ -36,9 +34,9 @@ class Test4 implements ITest4 {
 }
 
 container.register<Test4, Test4>(async (context) => {
-  const test1 = context.get<Test1>();
-  const test2 = context.get<Test2>();
+  const test1 = await context.get<Test1>();
+  const test2 = await context.get<Test2>();
   return new Test4(test1, test2);
 });
 
-console.log("runtime", container.get<Test1>());
+console.log("runtime", await container.get<ITest1>());

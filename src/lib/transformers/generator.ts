@@ -1,7 +1,12 @@
-import ts from "typescript";
+import ts, { ArrowFunction, Expression } from "typescript";
 import path from "path";
 import { DependenciesGraph, ModuleKind } from "../graph";
-import { createImportFromSymbol, shortHash, toCamelCase } from "../utils";
+import {
+  createImportFromSymbol,
+  hashSymbol,
+  shortHash,
+  toCamelCase,
+} from "../utils";
 
 export function generate(
   program: ts.Program,
@@ -11,6 +16,46 @@ export function generate(
   console.log("GENERATE");
   return (context: ts.TransformationContext) => {
     return (sourceFile: ts.SourceFile) => {
+      function traverseFunctionArgBody(
+        func: ts.FunctionExpression | ts.ArrowFunction,
+      ): ts.Node {
+        function visit(node: ts.Node): ts.Node {
+          // Check if the node is a call expression where the first argument of the function is used
+
+          if (
+            ts.isCallExpression(node) &&
+            ts.isPropertyAccessExpression(node.expression)
+          ) {
+            const methodName = node.expression.name.text;
+            const contextName = func.parameters[0].name.getText();
+            if (
+              contextName === node.expression.expression.getText() &&
+              methodName === "get"
+            ) {
+              const newArgs = [
+                ts.factory.createStringLiteral(
+                  hashSymbol(
+                    checker
+                      .getTypeAtLocation(node.typeArguments[0])
+                      .getSymbol()!,
+                  ),
+                ),
+                ...node.arguments.slice(1),
+              ];
+
+              return ts.factory.updateCallExpression(
+                node,
+                node.expression,
+                node.typeArguments,
+                newArgs,
+              );
+            }
+          }
+          return ts.visitEachChild(node, visit, context);
+        }
+        return ts.visitNode(func.body, visit);
+      }
+
       let statements: ts.NodeArray<ts.Statement> = sourceFile.statements;
 
       const addedModuleHashes: string[] = [];
@@ -69,7 +114,7 @@ export function generate(
                       [ts.factory.createStringLiteral(module.hash)],
                     ),
                     undefined,
-                    [],
+                    [ts.factory.createThis()],
                   ),
                 )
               : ts.factory.createNewExpression(
@@ -151,8 +196,150 @@ export function generate(
               const dependencies = dependenciesGraph.getInitDependenciesOf(
                 module.hash,
               );
+              const caseStatements = [];
+              // Create the arrow function '() => {}'
+              const arrowFunction = ts.factory.createArrowFunction(
+                [ts.factory.createModifier(ts.SyntaxKind.AsyncKeyword)],
+                undefined,
+                [],
+                undefined,
+                ts.factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
+                ts.factory.createBlock(caseStatements, true),
+              );
+
+              // Create the immediately invoked function expression '(() => {})()'
+              const iife = ts.factory.createCallExpression(
+                arrowFunction,
+                undefined,
+                [],
+              );
+
+              // Create the statement 'return (() => {})()'
+              const returnStatement = ts.factory.createReturnStatement(iife);
+
               for (const dependency of dependencies) {
+                if (dependency.kind === ModuleKind.SINGLETON) {
+                  // Create the expression 'this["hash"]'
+                  const elementAccess =
+                    ts.factory.createElementAccessExpression(
+                      ts.factory.createThis(),
+                      ts.factory.createStringLiteral(dependency.hash),
+                    );
+
+                  // Create the statement 'const module_hash = this["hash"]'
+                  const variableStatement = ts.factory.createVariableStatement(
+                    undefined,
+                    ts.factory.createVariableDeclarationList(
+                      [
+                        ts.factory.createVariableDeclaration(
+                          ts.factory.createIdentifier(
+                            `module_${dependency.hash}`,
+                          ),
+                          undefined,
+                          undefined,
+                          elementAccess,
+                        ),
+                      ],
+                      ts.NodeFlags.Const,
+                    ),
+                  );
+                  caseStatements.push(variableStatement);
+                } else {
+                  // transient
+                  if (dependency.isAsync) {
+                    // async factory
+                    const factoryAccessStatement =
+                      ts.factory.createAwaitExpression(
+                        ts.factory.createCallExpression(
+                          ts.factory.createCallExpression(
+                            ts.factory.createPropertyAccessExpression(
+                              ts.factory.createPropertyAccessExpression(
+                                ts.factory.createThis(),
+                                ts.factory.createIdentifier("asyncFactory"),
+                              ),
+                              ts.factory.createIdentifier("get"),
+                            ),
+                            undefined,
+                            [ts.factory.createStringLiteral(dependency.hash)],
+                          ),
+                          undefined,
+                          [ts.factory.createThis()],
+                        ),
+                      );
+                    const variableStatement =
+                      ts.factory.createVariableStatement(
+                        undefined,
+                        ts.factory.createVariableDeclarationList(
+                          [
+                            ts.factory.createVariableDeclaration(
+                              ts.factory.createIdentifier(
+                                `module_${dependency.hash}`,
+                              ),
+                              undefined,
+                              undefined,
+                              factoryAccessStatement,
+                            ),
+                          ],
+                          ts.NodeFlags.Const,
+                        ),
+                      );
+                    caseStatements.push(variableStatement);
+                  } else {
+                    // normal class
+                    const dependencySymbol =
+                      dependenciesGraph.convertHashToSymbol(dependency.hash);
+                    const dependenciesOfDependency =
+                      dependenciesGraph.getDependencies(dependency.hash);
+                    const classInit = ts.factory.createNewExpression(
+                      ts.factory.createIdentifier(dependencySymbol.getName()),
+                      undefined,
+                      dependenciesOfDependency.map((d) =>
+                        d.kind === ModuleKind.SINGLETON
+                          ? ts.factory.createElementAccessExpression(
+                              ts.factory.createThis(),
+                              ts.factory.createStringLiteral(d.hash),
+                            )
+                          : ts.factory.createIdentifier(`module_${d.hash}`),
+                      ),
+                    );
+
+                    const leftSide = ts.factory.createElementAccessExpression(
+                      ts.factory.createThis(),
+                      ts.factory.createStringLiteral(dependency.hash),
+                    );
+
+                    // Create the variable declaration: a = new b()
+                    const variableDeclaration =
+                      ts.factory.createVariableDeclaration(
+                        ts.factory.createIdentifier(
+                          `module_${dependency.hash}`,
+                        ), // Variable name
+                        undefined, // Type (none in this case)
+                        undefined, // Type node (none in this case)
+                        classInit, // Initializer
+                      );
+
+                    // Create the full statement: const a = new b();
+                    const variableStatement =
+                      ts.factory.createVariableStatement(
+                        [],
+                        ts.factory.createVariableDeclarationList(
+                          [variableDeclaration],
+                          ts.NodeFlags.Const,
+                        ), // Variable declaration list
+                      );
+                    caseStatements.push(variableStatement);
+                  }
+                  if (dependency.hash === module.hash) {
+                    caseStatements.push(
+                      ts.factory.createReturnStatement(
+                        ts.factory.createIdentifier(`module_${module.hash}`),
+                      ),
+                    );
+                  }
+                }
               }
+              statements.push(returnStatement);
             }
             moduleCases.push(
               ts.factory.createCaseClause(
@@ -224,10 +411,27 @@ export function generate(
                   dependencyTypeDeclaration?.getText(),
                 );
 
+                const modifiedFactory = traverseFunctionArgBody(
+                  node.arguments[0] as ArrowFunction,
+                );
+
+                const factory = node.arguments[0] as ArrowFunction;
+
+                const updatedFunc = ts.factory.updateArrowFunction(
+                  factory,
+                  factory.modifiers,
+                  factory.typeParameters,
+                  factory.parameters,
+                  factory.type,
+                  ts.factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
+                  modifiedFactory as ts.Expression,
+                );
+
                 const newArgs = [
-                  ...node.arguments,
+                  updatedFunc,
                   ts.factory.createStringLiteral(typeHash),
                 ];
+
                 return ts.factory.updateCallExpression(
                   node,
                   node.expression,
@@ -235,6 +439,22 @@ export function generate(
                   newArgs,
                 );
               }
+            }
+            if (objectName === "container" && methodName === "get") {
+              const dependencyType = node.typeArguments[0];
+              const dependencyTypeSymbol = checker
+                .getTypeAtLocation(dependencyType)
+                .getSymbol();
+              const dependencyTypeDeclaration =
+                dependencyTypeSymbol?.declarations[0];
+              const typeHash = shortHash(dependencyTypeDeclaration?.getText());
+              const newArgs = [ts.factory.createStringLiteral(typeHash)];
+              return ts.factory.updateCallExpression(
+                node,
+                node.expression,
+                node.typeArguments,
+                newArgs,
+              );
             }
           }
         }

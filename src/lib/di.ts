@@ -33,7 +33,7 @@ class Container {
     }
   }
 
-  registerSingleton<T, P extends T>(
+  registerSingleton<T, P extends T | never = never>(
     factory?: (c: Context) => Promise<P>,
     typeHash?: string,
   ): void {

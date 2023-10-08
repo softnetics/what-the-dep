@@ -1,12 +1,13 @@
 import { container } from "../lib/di";
-import { Test0, ITest0 } from "./modules/test0";
-import { Test1, ITest1 } from "./modules/test1";
+class Test0 {
+  constructor() {}
+}
 
-container.register<ITest1, Test1>();
-container.registerSingleton<ITest0, Test0>(async () => {
-  return new Test0();
-});
+class Test1 {
+  constructor(private test0: Test0) {}
+}
 
-await container.context.initSingletons();
+container.registerSingleton<Test0>();
+container.register<Test1>();
 
-console.log("runtime", await container.get<ITest1>());
+const test1 = await container.get<Test1>();

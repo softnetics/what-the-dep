@@ -2,7 +2,7 @@
 
 Usage:
 
-```
+```typescript
 import { container } from "../lib/di";
 class Test0 {
   constructor(){}

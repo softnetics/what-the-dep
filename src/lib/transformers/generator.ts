@@ -70,10 +70,10 @@ export function generate(
           // found context
           // add dependency to get
           const constructorExpression = [];
-          const initiated = [];
 
-          for (const module of dependenciesGraph.getSingletonDependencySorted()) {
-            // initiate all singletons
+          for (const module of dependenciesGraph.topologicalSort()) {
+            // TODO: tree shaking
+            // get all registered dependencies
             const dependency = dependenciesGraph.convertHashToSymbol(
               module.hash,
             );
@@ -95,7 +95,13 @@ export function generate(
 
               addStatements.push(modifiedClass);
             }
+          }
 
+          for (const module of dependenciesGraph.getSingletonDependencySorted()) {
+            // initiate all singletons
+            const dependency = dependenciesGraph.convertHashToSymbol(
+              module.hash,
+            );
             const dependencies = dependenciesGraph.getDependencies(module.hash);
 
             // if async get the factory from asyncFactory if not get the class

@@ -34,7 +34,11 @@ class Container {
   registerSingleton<T, P extends T>(
     factory?: (c: Context) => Promise<P>,
     typeHash?: string,
-  ): void {}
+  ): void {
+    if (factory && typeHash) {
+      this.context.set(typeHash, factory);
+    }
+  }
 
   async get<T extends any>(typeHash?: string): Promise<T> {
     return (await this.context.get(typeHash)) as T;

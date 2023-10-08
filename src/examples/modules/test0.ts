@@ -1,7 +1,11 @@
-export interface ITest0 {}
+export interface ITest0 {
+  hello: number;
+}
 
 export class Test0 implements ITest0 {
+  hello: number;
   constructor() {
-    console.log("Test0");
+    this.hello = Math.random();
+    console.log("test0 init", this.hello);
   }
 }

@@ -16,6 +16,8 @@ class Context {
   set(typeHash: string, initiator: Function): void {
     this.asyncFactory.set(typeHash, initiator);
   }
+
+  async initSingletons(): Promise<void> {}
 }
 
 class Container {

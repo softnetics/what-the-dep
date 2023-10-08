@@ -1,15 +1,19 @@
 # whatthedep
 
-To install dependencies:
+Usage:
 
-```bash
-bun install
 ```
+import { container } from "../lib/di";
+class Test0 {
+  constructor(){}
+}
 
-To run:
+class Test1 {
+  constructor(private test0:Test0){}
+}
 
-```bash
-bun build.ts
+container.registerSingleton<Test0>();
+container.register<Test1>();
+
+const test1 = await container.get<Test1>();
 ```
-
-This project was created using `bun init` in bun v1.0.0. [Bun](https://bun.sh) is a fast all-in-one JavaScript runtime.

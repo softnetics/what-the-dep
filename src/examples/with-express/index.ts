@@ -7,16 +7,14 @@ import { Service, ServiceImpl } from "./modules/service";
 import express from "express";
 
 container.registerSingleton<Secret, SecretImpl>();
-container.registerSingleton<PrismaClient, PrismaClient>(async (c) => {
+container.register<PrismaClient, PrismaClient>(async (c) => {
   const secret = await c.get<Secret>();
   return new PrismaClient({
     datasourceUrl: secret.getSecret(),
   });
 });
-container.registerSingleton<Repo, RepoImpl>(async (c) => {
-  const prisma = await c.get<PrismaClient>();
-  return new RepoImpl(prisma);
-});
+
+container.registerSingleton<Repo, RepoImpl>();
 
 container.registerSingleton<Controller, ControllerImpl>();
 

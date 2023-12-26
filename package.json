@@ -5,6 +5,27 @@
   "types": "dist/src/index.d.ts",
   "module": "dist/index.js",
   "license": "MIT",
+  "homepage": "https://github.com/softnetics/whatthedep",
+  "bugs": {
+    "url": "https://github.com/softnetics/whatthedep"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/softnetics/whatthedep.git"
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "typescript",
+    "dependencies-injection",
+    "type-safe"
+  ],
+  "author": {
+    "name": "Patcharapol Sankaew",
+    "email": "meen.sankaew@gmail.com",
+    "url": "https://softnetics.tech"
+  },
   "scripts": {
     "build": "ncc build src/index.ts -o dist"
   },
@@ -18,5 +39,8 @@
   "type": "module",
   "dependencies": {
     "@changesets/cli": "^2.27.1"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

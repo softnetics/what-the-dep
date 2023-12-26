@@ -24,7 +24,7 @@ jobs:
   release:
     uses: softnetics/workflows/.github/workflows/release-packages.yaml@main
     with:
-      before-publish: npm run build:plugin
+      before-publish: npm run build
       package-manager: npm
     secrets:
       NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

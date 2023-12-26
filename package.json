@@ -1,6 +1,6 @@
 {
   "name": "whatthedep",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "main": "dist/index.js",
   "types": "dist/src/index.d.ts",
   "module": "dist/index.js",

@@ -1,11 +1,20 @@
 {
-  "name": "whatthedep-2",
-  "module": "index.ts",
-  "type": "module",
+  "name": "whatthedep",
+  "version": "0.0.0",
+  "module": "src/index.ts",
+  "scripts": {
+    "build:plugin": "ncc build src/plugin.ts -o dist/plugin",
+    "build:container": "ncc build src/container.ts -o dist/container"
+  },
   "devDependencies": {
+    "@vercel/ncc": "^0.38.1",
     "bun-types": "latest"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
+  },
+  "type": "module",
+  "dependencies": {
+    "@changesets/cli": "^2.27.1"
   }
 }

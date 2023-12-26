@@ -1,10 +1,12 @@
 {
   "name": "whatthedep",
   "version": "0.0.0",
-  "module": "src/index.ts",
+  "main": "dist/index.js",
+  "types": "dist/src/index.d.ts",
+  "module": "dist/index.js",
+  "license": "MIT",
   "scripts": {
-    "build:plugin": "ncc build src/plugin.ts -o dist/plugin",
-    "build:container": "ncc build src/container.ts -o dist/container"
+    "build": "ncc build src/index.ts -o dist"
   },
   "devDependencies": {
     "@vercel/ncc": "^0.38.1",

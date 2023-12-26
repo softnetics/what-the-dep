@@ -1,8 +1,5 @@
 import * as ts from "typescript";
 import { __WTD_MODULE__ } from "./constants";
-import { hashSymbol, isWhatTheDepMethod } from "./utils";
-import { DependencyGraph } from "./graph";
-import { constrainedMemory } from "process";
 import { handleContainer } from "./1-create-container";
 
 let whatTheDepModule: ts.Symbol | undefined;

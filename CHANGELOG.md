@@ -1,5 +1,15 @@
 # what-the-dep
 
+## 1.2.0
+
+### Minor Changes
+
+- d430365: Add setup cli
+
+### Patch Changes
+
+- 2a7c609: Clean code
+
 ## 1.1.0
 
 ### Minor Changes

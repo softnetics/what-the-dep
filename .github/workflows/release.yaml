@@ -26,5 +26,6 @@ jobs:
     with:
       before-publish: bun run build
       package-manager: bun
+      bun-version: 1.0.20
     secrets:
       NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

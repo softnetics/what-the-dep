@@ -6,7 +6,7 @@ type WhatTheDepOptions = {};
 
 function plugin(opts?: WhatTheDepOptions): BunPlugin {
   return {
-    name: "whatthedep",
+    name: "what-the-dep",
     setup(build) {
       build.onLoad({ filter: /\.ts$/ }, async (args): Promise<OnLoadResult> => {
         const transpiler = new Transpiler({ loader: "ts" });
@@ -19,4 +19,4 @@ function plugin(opts?: WhatTheDepOptions): BunPlugin {
   };
 }
 
-export const whatthedep = plugin;
+export const whatTheDep = plugin;

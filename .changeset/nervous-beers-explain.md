@@ -1,5 +1,5 @@
 ---
-"@softnetics/whatthedep": patch
+"@softnetics/what-the-dep": patch
 ---
 
 Patch and minor changes

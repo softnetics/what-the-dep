@@ -1,17 +1,17 @@
 {
-  "name": "@softnetics/whatthedep",
+  "name": "@softnetics/what-the-dep",
   "version": "1.0.0",
   "main": "dist/index.js",
   "types": "dist/src/index.d.ts",
   "module": "dist/index.js",
   "license": "MIT",
-  "homepage": "https://github.com/softnetics/whatthedep",
+  "homepage": "https://github.com/softnetics/what-the-dep",
   "bugs": {
-    "url": "https://github.com/softnetics/whatthedep"
+    "url": "https://github.com/softnetics/what-the-dep"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/softnetics/whatthedep.git"
+    "url": "https://github.com/softnetics/what-the-dep.git"
   },
   "files": [
     "dist"

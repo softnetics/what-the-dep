@@ -1,5 +1,11 @@
 # what-the-dep
 
+## 1.1.0
+
+### Minor Changes
+
+- 0bf9d3d: Reduce package size
+
 ## 1.0.2
 
 ### Patch Changes

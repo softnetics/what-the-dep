@@ -105,7 +105,6 @@ export const handleContainer = (
             const InterfaceOrClass = node.typeArguments![0];
             const Class = node.typeArguments?.[1];
 
-            console.log(InterfaceOrClass.getText(), Class?.getText());
             if (ts.isTypeReferenceNode(InterfaceOrClass)) {
               // this type reference should have only one child
               const identifier =
@@ -141,7 +140,6 @@ export const handleContainer = (
                 return node;
               }
 
-              console.log("register", node.getText());
               graph.register(
                 graphRegisterMethod,
                 hashSymbol(OriginalClassSymbol),
@@ -157,7 +155,6 @@ export const handleContainer = (
     };
     ts.visitNode(rootNode, visitor);
 
-    graph.print();
     if (ts.isNewExpression(containerInitNode.parent)) {
       const containerInitNodeParent = containerInitNode.parent;
       // add argument

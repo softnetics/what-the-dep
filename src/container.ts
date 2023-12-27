@@ -34,6 +34,11 @@ export class Container<Member = never> {
   ): Promise<InterfaceOrClass> {
     if (!this.singletonsInitialized) {
       this.singletonsInitialized = true;
+      if (!this.context["init_singletons"]) {
+        throw new Error(
+          "what-the-dep is not running correctly, please check your bunfig.toml and make sure it is preload what-the-dep plugin"
+        );
+      }
       this.context["init_singletons"](this.memo, this.get.bind(this));
     }
     if (this.context[interfaceHash]) {

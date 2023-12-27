@@ -31,15 +31,14 @@
   },
   "devDependencies": {
     "@vercel/ncc": "^0.38.1",
-    "bun-types": "latest"
+    "bun-types": "latest",
+    "@changesets/cli": "^2.27.1"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
   },
   "type": "module",
-  "dependencies": {
-    "@changesets/cli": "^2.27.1"
-  },
+  "dependencies": {},
   "publishConfig": {
     "access": "public"
   }

@@ -4,6 +4,12 @@
 
 ### Patch Changes
 
+- d7ee291: Change bundler to tsup
+
+## 1.0.2
+
+### Patch Changes
+
 - bb88c09: Reduce bundle size
 
 ## 1.0.1

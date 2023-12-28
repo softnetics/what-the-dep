@@ -1,5 +1,11 @@
 # what-the-dep
 
+## 2.0.1
+
+### Patch Changes
+
+- 6a703e3: Bug fixes
+
 ## 2.0.0
 
 ### Major Changes

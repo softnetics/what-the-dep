@@ -1,5 +1,15 @@
 # what-the-dep
 
+## 1.3.0
+
+### Minor Changes
+
+- fbb6f18: Reduce bundle size and bug fixes
+
+### Patch Changes
+
+- e84d557: Detect what-the-dep compiler and throw error when not configured
+
 ## 1.2.0
 
 ### Minor Changes

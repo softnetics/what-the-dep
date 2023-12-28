@@ -1,5 +1,11 @@
 # what-the-dep
 
+## 2.0.0
+
+### Major Changes
+
+- d22482a: Exported 2 path container and plugin to seperate runtime and compile-time code
+
 ## 1.3.0
 
 ### Minor Changes

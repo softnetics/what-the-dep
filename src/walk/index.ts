@@ -15,7 +15,11 @@ export const transformerFactory = (
   return (context) => (rootNode) => {
     globalContext = context;
     const visitor = (node: ts.Node): ts.Node => {
-      //1. find `const ModuleName = new Container();`
+      // Find container initialization
+      // 1. const container = new Container();
+      // 2. const container = (new Container()).register();
+
+      // case 1
       if (
         ts.isVariableStatement(node) &&
         node.declarationList.declarations.length === 1
@@ -55,6 +59,45 @@ export const transformerFactory = (
                 );
               }
             }
+          }
+        }
+      }
+
+      // case 2
+      if (
+        ts.isCallExpression(node) &&
+        ts.isPropertyAccessExpression(node.expression)
+      ) {
+        // dig into expression to find the identifier
+        let expressionChildren = node.expression.getChildren();
+        while (!ts.isIdentifier(expressionChildren[0])) {
+          if (ts.isParenthesizedExpression(expressionChildren[0])) {
+            // (new Container()).register()
+            if (ts.isNewExpression(expressionChildren[0].expression)) {
+              const containerNode =
+                expressionChildren[0].expression.getChildren()[1];
+              handleContainer(
+                rootNode,
+                containerNode,
+                globalTypeChecker.getSymbolAtLocation(containerNode)!,
+                program,
+                transformList
+              );
+            }
+          }
+          if (ts.isNewExpression(expressionChildren[0])) {
+            const containerNode = expressionChildren[0].getChildren()[1];
+            handleContainer(
+              rootNode,
+              containerNode,
+              globalTypeChecker.getSymbolAtLocation(containerNode)!,
+              program,
+              transformList
+            );
+          }
+          expressionChildren = expressionChildren[0].getChildren();
+          if (expressionChildren.length <= 2) {
+            break;
           }
         }
       }

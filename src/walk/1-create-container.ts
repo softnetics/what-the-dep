@@ -3,7 +3,7 @@ import { DependencyGraph } from "./graph";
 import { globalTypeChecker, globalContext } from ".";
 import { listDependenciesOfClass } from "./2-list-dependency";
 import { hashSymbol, isWhatTheDepMethod } from "./utils";
-import { handleGet } from "./3-modify-get";
+import { getFactoryDependencies, handleGet } from "./3-modify-get";
 import { createContextFromGraph } from "./4-create-context";
 
 type ContainerRegisterMethod = "register" | "registerSingleton";
@@ -89,7 +89,7 @@ export const handleContainer = (
             if (registerMethod === "get") {
               // case 2 of get
               handleGet(node, transformList);
-              return node;
+              return ts.visitEachChild(node, visitor, globalContext);
             }
 
             if (!isContainerRegisterMethod(registerMethod)) {
@@ -116,10 +116,18 @@ export const handleContainer = (
                   `Could not find symbol of ${identifier.getText()}`
                 );
               }
-              const dependencies = listDependenciesOfClass(
-                OriginalClassSymbol,
-                identifier
-              );
+
+              let dependencies: string[] = [];
+
+              if (factoryNode) {
+                // dont care a class dependency and check a get of a factory
+                dependencies = getFactoryDependencies(factoryNode);
+              } else {
+                dependencies = listDependenciesOfClass(
+                  OriginalClassSymbol,
+                  identifier
+                );
+              }
 
               const graphRegisterMethod =
                 registerMethod === "register" ? "transient" : "singleton";

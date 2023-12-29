@@ -15,7 +15,6 @@ export const hashSymbol = (symbol: ts.Symbol) => {
     .update(symbolName)
     .digest("hex")
     .substring(0, 8);
-    console.log("hash",symbolName, hash);
   return hash;
 };
 
@@ -28,12 +27,10 @@ export const hashNode = (node: ts.Node) => {
   const typeString = globalTypeChecker.typeToString(type);
 
   const hash = crypto
-  .createHash("md5")
-  .update(typeString)
-  .digest("hex")
-  .substring(0, 8);
-  console.log("hash",typeString, hash);
+    .createHash("md5")
+    .update(typeString)
+    .digest("hex")
+    .substring(0, 8);
 
-return hash;
-
-}
+  return hash;
+};

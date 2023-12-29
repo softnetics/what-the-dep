@@ -12,7 +12,6 @@ import {
 } from "./source-templates";
 
 export const createContextFromGraph = (graph: DependencyGraph) => {
-  graph.print();
   const properties = graph.topologicalSort().map((hash) => {
     const resolved = graph.resolve(hash);
     if (!resolved) {

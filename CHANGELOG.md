@@ -1,5 +1,11 @@
 # what-the-dep
 
+## 2.0.2
+
+### Patch Changes
+
+- a0615c9: Fix union type dependency resolving bugs
+
 ## 2.0.1
 
 ### Patch Changes

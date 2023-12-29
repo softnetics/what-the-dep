@@ -75,25 +75,37 @@ export const transformerFactory = (
             // (new Container()).register()
             if (ts.isNewExpression(expressionChildren[0].expression)) {
               const containerNode =
-                expressionChildren[0].expression.getChildren()[1];
+                expressionChildren[0].expression.getChildren()[1]!;
+              const containerSymbol = globalTypeChecker.getTypeAtLocation(
+                containerNode
+              ).getSymbol();
+              if(containerSymbol?.valueDeclaration?.getText().includes(__WTD_MODULE__)) {
+                handleContainer(
+                  rootNode,
+                  containerNode,
+                  containerSymbol!,
+                  program,
+                  transformList
+                );
+              }
+            }
+          }
+          if (ts.isNewExpression(expressionChildren[0])) {
+            const containerNode = expressionChildren[0].getChildren()[1]!;
+            const containerSymbol = globalTypeChecker.getTypeAtLocation(
+              containerNode
+            ).getSymbol();
+
+
+            if(containerSymbol?.valueDeclaration?.getText().includes(__WTD_MODULE__)) {
               handleContainer(
                 rootNode,
                 containerNode,
-                globalTypeChecker.getSymbolAtLocation(containerNode)!,
+                containerSymbol!,
                 program,
                 transformList
               );
             }
-          }
-          if (ts.isNewExpression(expressionChildren[0])) {
-            const containerNode = expressionChildren[0].getChildren()[1];
-            handleContainer(
-              rootNode,
-              containerNode,
-              globalTypeChecker.getSymbolAtLocation(containerNode)!,
-              program,
-              transformList
-            );
           }
           expressionChildren = expressionChildren[0].getChildren();
           if (expressionChildren.length <= 2) {

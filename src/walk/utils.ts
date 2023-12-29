@@ -1,6 +1,7 @@
 import ts from "typescript";
 import crypto from "crypto";
 
+import { globalTypeChecker } from ".";
 import { WTD_METHOD } from "./constants";
 
 export const hashSymbol = (symbol: ts.Symbol) => {
@@ -14,9 +15,25 @@ export const hashSymbol = (symbol: ts.Symbol) => {
     .update(symbolName)
     .digest("hex")
     .substring(0, 8);
+    console.log("hash",symbolName, hash);
   return hash;
 };
 
 export const isWhatTheDepMethod = (node: ts.Node) => {
   return WTD_METHOD.includes(node.getText());
 };
+
+export const hashNode = (node: ts.Node) => {
+  const type = globalTypeChecker.getTypeAtLocation(node);
+  const typeString = globalTypeChecker.typeToString(type);
+
+  const hash = crypto
+  .createHash("md5")
+  .update(typeString)
+  .digest("hex")
+  .substring(0, 8);
+  console.log("hash",typeString, hash);
+
+return hash;
+
+}

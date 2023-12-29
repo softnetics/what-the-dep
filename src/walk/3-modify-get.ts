@@ -1,17 +1,18 @@
 import ts from "typescript";
 import { DependencyGraph } from "./graph";
 import { globalTypeChecker, globalContext } from ".";
-import { hashSymbol } from "./utils";
+import { hashSymbol, hashNode } from "./utils";
 
 export const handleGet = (
   node: ts.CallExpression,
   transformList: Map<ts.Node, ts.Node>
 ) => {
   // hash and move type argument to argument
+  const symbol = globalTypeChecker.getTypeAtLocation(node.typeArguments![0]).getSymbol()
   const argument = ts.factory.createStringLiteral(
-    hashSymbol(
-      globalTypeChecker.getTypeAtLocation(node.typeArguments![0]).getSymbol()!
-    )
+    symbol ? hashSymbol(
+      symbol
+    ) : hashNode(node.typeArguments![0])
   );
   const newNode = ts.factory.updateCallExpression(
     node,

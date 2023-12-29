@@ -1,7 +1,7 @@
 import ts from "typescript";
 import { DependencyGraph } from "./graph";
 import { globalTypeChecker } from ".";
-import { hashSymbol } from "./utils";
+import { hashSymbol, hashNode } from "./utils";
 
 export const listDependenciesOfClass = (
   classSymbol: ts.Symbol,
@@ -38,9 +38,15 @@ export const listDependenciesOfClass = (
           `Missing type of parameter ${parameter.name.getText()}`
         );
       }
+
       const type = globalTypeChecker.getTypeAtLocation(parameter.type);
-      const symbol = type.getSymbol();
-      const moduleHash = hashSymbol(symbol!);
+      const symbol = type.symbol ?? type.getSymbol();
+      let moduleHash: string
+      if( symbol ) {
+        moduleHash = hashSymbol(symbol);
+      }else{
+        moduleHash = hashNode(parameter.type);
+      }
       if (symbol && moduleHash) {
         dependencies.push(moduleHash);
       }

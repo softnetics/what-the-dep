@@ -19,7 +19,8 @@
   "keywords": [
     "typescript",
     "dependencies-injection",
-    "type-safe"
+    "type-safe",
+    "bun"
   ],
   "author": {
     "name": "Patcharapol Sankaew",

@@ -1,5 +1,11 @@
 # what-the-dep
 
+## 2.1.0
+
+### Minor Changes
+
+- 0e80d3e: Allow export container to another files
+
 ## 2.0.2
 
 ### Patch Changes

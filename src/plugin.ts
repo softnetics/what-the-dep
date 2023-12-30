@@ -1,9 +1,15 @@
 import { BunPlugin, OnLoadResult, OnResolveResult, Transpiler } from "bun";
 import { transformer } from "./transformer";
+import ts from "typescript";
 
-// no option for now
 export type WhatTheDepOptions = {
   debug?: boolean;
+  extend?: (
+    program: ts.Program,
+    node: ts.Node,
+    context: ts.TransformationContext,
+    transformList: Map<ts.Node, ts.Node>
+  ) => void;
 };
 
 function plugin(opts?: WhatTheDepOptions): BunPlugin {

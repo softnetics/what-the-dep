@@ -147,6 +147,11 @@ export const transformerFactory = (
           }
         }
       }
+
+      if (config.extend) {
+        config.extend(program, node, context, transformList);
+      }
+
       return ts.visitEachChild(node, visitor, context);
     };
 

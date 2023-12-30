@@ -1,5 +1,15 @@
 # what-the-dep
 
+## 2.2.0
+
+### Minor Changes
+
+- 9140866: Allow transformer plugin
+
+### Patch Changes
+
+- d0fc240: Added docs and tags
+
 ## 2.1.0
 
 ### Minor Changes

@@ -27,7 +27,8 @@
     "url": "https://softnetics.tech"
   },
   "scripts": {
-    "build": "tsup"
+    "build": "tsup",
+    "test": "bun test"
   },
   "devDependencies": {
     "@vercel/ncc": "^0.38.1",

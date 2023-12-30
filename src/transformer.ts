@@ -1,5 +1,6 @@
 import ts from "typescript";
 import { transformerFactory } from "./walk";
+import { WhatTheDepOptions } from ".";
 
 const tsConfigPath = ts.findConfigFile(
   "./",
@@ -19,14 +20,17 @@ if (!parsedConfig) {
 const program = ts.createProgram(parsedConfig.fileNames, parsedConfig.options);
 const printer = ts.createPrinter();
 
-export const transformer = async (filePath: string): Promise<string> => {
+export const transformer = async (
+  filePath: string,
+  config: WhatTheDepOptions
+): Promise<string> => {
   const sourceFile = program.getSourceFile(filePath);
   if (!sourceFile)
     return await require("fs").promises.readFile(filePath, "utf8");
 
   const transformedSourceFile = ts.transform(
     sourceFile,
-    [transformerFactory(program)],
+    [transformerFactory(program, config)],
     parsedConfig.options
   ).transformed[0] as ts.SourceFile;
 

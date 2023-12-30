@@ -36,38 +36,51 @@ export const handleContainer = (
       ) {
         // dig into expression to find the identifier
         let expressionChildren = node.expression.getChildren();
- 
-        while (expressionChildren[0] && !(ts.isNewExpression(expressionChildren[0]) || ts.isIdentifier(expressionChildren[0]))) {
+
+        while (
+          expressionChildren[0] &&
+          !(
+            ts.isNewExpression(expressionChildren[0]) ||
+            ts.isIdentifier(expressionChildren[0])
+          )
+        ) {
           expressionChildren = expressionChildren[0].getChildren();
         }
 
-          if(expressionChildren[0] && ts.isNewExpression(expressionChildren[0])) {
-            const maybeWhatTheDepContainer = expressionChildren[0].getChildren()[1]
-            if(!maybeWhatTheDepContainer) {
-              return ts.visitEachChild(node, visitor, globalContext);
-            }
-  
-            if(
-              !(ts.isIdentifier(maybeWhatTheDepContainer) &&
-              globalTypeChecker.getTypeAtLocation(maybeWhatTheDepContainer).getSymbol() === container)
-            ) {
-              return ts.visitEachChild(node, visitor, globalContext);
-            }
-
-            expressionChildren[0] = maybeWhatTheDepContainer;
+        if (
+          expressionChildren[0] &&
+          ts.isNewExpression(expressionChildren[0])
+        ) {
+          const maybeWhatTheDepContainer =
+            expressionChildren[0].getChildren()[1];
+          if (!maybeWhatTheDepContainer) {
+            return ts.visitEachChild(node, visitor, globalContext);
           }
-        
+
+          if (
+            !(
+              ts.isIdentifier(maybeWhatTheDepContainer) &&
+              globalTypeChecker
+                .getTypeAtLocation(maybeWhatTheDepContainer)
+                .getSymbol() === container
+            )
+          ) {
+            return ts.visitEachChild(node, visitor, globalContext);
+          }
+
+          expressionChildren[0] = maybeWhatTheDepContainer;
+        }
 
         if (
           !isWhatTheDepMethod(expressionChildren[2]) ||
           !expressionChildren[0]
         ) {
-          return node;
+          return ts.visitEachChild(node, visitor, globalContext);
         }
         if (expressionChildren[2].getText() === "get") {
-          const identifierSymbol = globalTypeChecker.getTypeAtLocation(
-            expressionChildren[0]
-          ).getSymbol();
+          const identifierSymbol = globalTypeChecker
+            .getTypeAtLocation(expressionChildren[0])
+            .getSymbol();
           if (identifierSymbol) {
             if (ts.isVariableDeclaration(identifierSymbol.valueDeclaration!)) {
               // case 1 of get
@@ -89,11 +102,11 @@ export const handleContainer = (
             }
           }
         }
-         const symbol = globalTypeChecker.getTypeAtLocation(
-          expressionChildren[0]
-        ).getSymbol();
+        const symbol = globalTypeChecker
+          .getTypeAtLocation(expressionChildren[0])
+          .getSymbol();
         // make sure this is a method calling of the container
-         if (symbol === container) {
+        if (symbol === container) {
           // this iterate through all register and registerSingleton
           if (ts.isCallExpression(node)) {
             // method calling expression structure is
@@ -119,13 +132,14 @@ export const handleContainer = (
 
             const InterfaceOrClass = node.typeArguments![0];
             const Class = node.typeArguments?.[1];
-             if (ts.isTypeReferenceNode(InterfaceOrClass)) {
-               // this type reference should have only one child
+            if (ts.isTypeReferenceNode(InterfaceOrClass)) {
+              // this type reference should have only one child
               const identifier =
                 Class?.getChildren()[0] ?? InterfaceOrClass.getChildren()[0];
-              
-              const OriginalClassSymbol =
-                globalTypeChecker.getTypeAtLocation(identifier).getSymbol() ;
+
+              const OriginalClassSymbol = globalTypeChecker
+                .getTypeAtLocation(identifier)
+                .getSymbol();
 
               let dependencies: string[] = [];
 
@@ -145,25 +159,25 @@ export const handleContainer = (
               if (Class) {
                 // declare class using interface hash
                 const classSymbol = globalTypeChecker
-                .getTypeAtLocation(InterfaceOrClass)
-                .getSymbol()
+                  .getTypeAtLocation(InterfaceOrClass)
+                  .getSymbol();
                 graph.register(
                   graphRegisterMethod,
-                  classSymbol ? hashSymbol(
-                    classSymbol
-                  ) : hashNode(InterfaceOrClass),
+                  classSymbol
+                    ? hashSymbol(classSymbol)
+                    : hashNode(InterfaceOrClass),
                   factoryNode,
                   Class.getText(),
                   dependencies
                 );
-                return node;
+                return ts.visitEachChild(node, visitor, globalContext);
               }
-
-              
 
               graph.register(
                 graphRegisterMethod,
-                OriginalClassSymbol ? hashSymbol(OriginalClassSymbol) : hashNode(identifier),
+                OriginalClassSymbol
+                  ? hashSymbol(OriginalClassSymbol)
+                  : hashNode(identifier),
                 factoryNode,
                 InterfaceOrClass.getText(),
                 dependencies

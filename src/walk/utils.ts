@@ -15,6 +15,7 @@ export const hashSymbol = (symbol: ts.Symbol) => {
     .update(symbolName)
     .digest("hex")
     .substring(0, 8);
+
   return hash;
 };
 

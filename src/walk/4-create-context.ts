@@ -1,6 +1,6 @@
 import ts from "typescript";
 import { DependencyGraph } from "./graph";
-import { globalTypeChecker } from ".";
+import { globalConfig, globalTypeChecker } from ".";
 import { hashSymbol } from "./utils";
 import {
   defaultFactoryTemplate,
@@ -39,7 +39,7 @@ export const createContextFromGraph = (graph: DependencyGraph) => {
   });
 
   properties.push(initSingletonsTemplate(graph.getSingletons()));
-
+  if (globalConfig.debug) graph.print();
   const objectLiteral = ts.factory.createObjectLiteralExpression(
     properties,
     true

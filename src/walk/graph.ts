@@ -19,6 +19,7 @@ export class DependencyGraph {
     className: string,
     dependencies: string[]
   ): void {
+    console.log("register", interfaceHash, className);
     this.dependencies.set(interfaceHash, {
       type,
       dependencies,

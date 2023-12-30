@@ -13,6 +13,9 @@ export const listDependenciesOfClass = (
     .getSymbol()?.valueDeclaration;
 
   if (!classDeclaration) {
+    if (!classSymbol?.name) {
+      throw new Error(`There are only type provided, please provide a factory`);
+    }
     throw new Error(`Could not find class declaration of ${classSymbol.name}`);
   }
 
@@ -41,10 +44,10 @@ export const listDependenciesOfClass = (
 
       const type = globalTypeChecker.getTypeAtLocation(parameter.type);
       const symbol = type.symbol ?? type.getSymbol();
-      let moduleHash: string
-      if( symbol ) {
+      let moduleHash: string;
+      if (symbol) {
         moduleHash = hashSymbol(symbol);
-      }else{
+      } else {
         moduleHash = hashNode(parameter.type);
       }
       if (symbol && moduleHash) {

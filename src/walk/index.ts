@@ -1,16 +1,21 @@
 import * as ts from "typescript";
 import { __WTD_MODULE__ } from "./constants";
 import { handleContainer } from "./1-create-container";
+import { WhatTheDepOptions } from "..";
+import { handleGet } from "./3-modify-get";
 
 let whatTheDepModule: ts.Symbol | undefined;
 
 export let globalContext: ts.TransformationContext;
 export let globalTypeChecker: ts.TypeChecker;
+export let globalConfig: WhatTheDepOptions;
 
 export const transformerFactory = (
-  program: ts.Program
+  program: ts.Program,
+  config: WhatTheDepOptions
 ): ts.TransformerFactory<ts.Node> => {
   const transformList = new Map<ts.Node, ts.Node>();
+  globalConfig = config;
   globalTypeChecker = program.getTypeChecker();
   return (context) => (rootNode) => {
     globalContext = context;
@@ -39,7 +44,9 @@ export const transformerFactory = (
             handleContainer(
               rootNode,
               declaration.initializer.expression,
-              globalTypeChecker.getSymbolAtLocation(declaration.name)!,
+              globalTypeChecker
+                .getTypeAtLocation(declaration.name)
+                .getSymbol()!,
               program,
               transformList
             );
@@ -53,7 +60,9 @@ export const transformerFactory = (
                 handleContainer(
                   rootNode,
                   declaration.initializer.expression,
-                  globalTypeChecker.getSymbolAtLocation(declaration.name)!,
+                  globalTypeChecker
+                    .getTypeAtLocation(declaration.name)
+                    .getSymbol()!,
                   program,
                   transformList
                 );
@@ -76,10 +85,14 @@ export const transformerFactory = (
             if (ts.isNewExpression(expressionChildren[0].expression)) {
               const containerNode =
                 expressionChildren[0].expression.getChildren()[1]!;
-              const containerSymbol = globalTypeChecker.getTypeAtLocation(
-                containerNode
-              ).getSymbol();
-              if(containerSymbol?.valueDeclaration?.getText().includes(__WTD_MODULE__)) {
+              const containerSymbol = globalTypeChecker
+                .getTypeAtLocation(containerNode)
+                .getSymbol();
+              if (
+                containerSymbol?.valueDeclaration
+                  ?.getText()
+                  .includes(__WTD_MODULE__)
+              ) {
                 handleContainer(
                   rootNode,
                   containerNode,
@@ -92,12 +105,15 @@ export const transformerFactory = (
           }
           if (ts.isNewExpression(expressionChildren[0])) {
             const containerNode = expressionChildren[0].getChildren()[1]!;
-            const containerSymbol = globalTypeChecker.getTypeAtLocation(
-              containerNode
-            ).getSymbol();
+            const containerSymbol = globalTypeChecker
+              .getTypeAtLocation(containerNode)
+              .getSymbol();
 
-
-            if(containerSymbol?.valueDeclaration?.getText().includes(__WTD_MODULE__)) {
+            if (
+              containerSymbol?.valueDeclaration
+                ?.getText()
+                .includes(__WTD_MODULE__)
+            ) {
               handleContainer(
                 rootNode,
                 containerNode,
@@ -113,6 +129,24 @@ export const transformerFactory = (
           }
         }
       }
+
+      // Find a property access expression .get
+      if (ts.isPropertyAccessExpression(node)) {
+        // is .get
+        if (node.name.getText() === "get") {
+          const symbol = globalTypeChecker
+            .getTypeAtLocation(node.expression)
+            .getSymbol();
+          if (symbol) {
+            if (symbol?.valueDeclaration?.getText().includes(__WTD_MODULE__)) {
+              if (!ts.isCallExpression(node.parent)) {
+                return ts.visitEachChild(node, visitor, context);
+              }
+              handleGet(node.parent, transformList);
+            }
+          }
+        }
+      }
       return ts.visitEachChild(node, visitor, context);
     };
 
@@ -121,7 +155,11 @@ export const transformerFactory = (
     if (transformList.size > 0) {
       const transform = (node: ts.Node): ts.Node => {
         if (transformList.has(node)) {
-          return transformList.get(node)!;
+          return ts.visitEachChild(
+            transformList.get(node)!,
+            transform,
+            context
+          );
         }
         return ts.visitEachChild(node, transform, context);
       };

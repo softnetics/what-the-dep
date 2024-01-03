@@ -1,6 +1,6 @@
 import ts from "typescript";
 import { globalContext, globalTypeChecker } from ".";
-import { hashNode, hashSymbol } from "./utils";
+import { hashSymbolOrNode } from "./utils";
 
 export const defaultFactoryTemplate = (
   className: string,
@@ -132,10 +132,7 @@ export const factoryWrapperTemplate = (factory: ts.Expression) => {
           .getSymbol();
         if (symbol && symbol === getSymbol) {
           const classOrInterface = node.typeArguments![0];
-          const classOrInterfaceSymbol = globalTypeChecker.getTypeAtLocation(classOrInterface).getSymbol()
-          const hash = classOrInterfaceSymbol
-            ? hashSymbol(classOrInterfaceSymbol)
-            : hashNode(classOrInterface);
+          const hash = hashSymbolOrNode(classOrInterface);
           const newNode = ts.factory.createCallExpression(
             ts.factory.createIdentifier("get"),
             undefined,

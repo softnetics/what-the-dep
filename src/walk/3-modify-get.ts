@@ -8,11 +8,11 @@ export const handleGet = (
   transformList: Map<ts.Node, ts.Node>
 ) => {
   // hash and move type argument to argument
-  const symbol = globalTypeChecker.getTypeAtLocation(node.typeArguments![0]).getSymbol()
+  const symbol = globalTypeChecker
+    .getTypeAtLocation(node.typeArguments![0])
+    .getSymbol();
   const argument = ts.factory.createStringLiteral(
-    symbol ? hashSymbol(
-      symbol
-    ) : hashNode(node.typeArguments![0])
+    symbol ? hashSymbol(symbol) : hashNode(node.typeArguments![0])
   );
   const newNode = ts.factory.updateCallExpression(
     node,
@@ -38,9 +38,12 @@ export const getFactoryDependencies = (factory: ts.Expression) => {
           .getSymbol();
         if (symbol && symbol === getSymbol) {
           const classOrInterface = node.typeArguments![0];
-          const hash = hashSymbol(
-            globalTypeChecker.getTypeAtLocation(classOrInterface).getSymbol()!
-          );
+          const symbol = globalTypeChecker
+            .getTypeAtLocation(classOrInterface)
+            .getSymbol();
+          const hash = symbol
+            ? hashSymbol(symbol)
+            : hashNode(node.typeArguments![0]);
           dependencies.push(hash);
         }
       }

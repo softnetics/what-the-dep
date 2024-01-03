@@ -35,3 +35,9 @@ export const hashNode = (node: ts.Node) => {
 
   return hash;
 };
+
+export const hashSymbolOrNode = (node: ts.Node) => {
+  const type = globalTypeChecker.getTypeAtLocation(node);
+  const symbol = type.getSymbol();
+  return symbol ? hashSymbol(symbol) : hashNode(node);
+}

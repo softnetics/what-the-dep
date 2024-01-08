@@ -1,5 +1,11 @@
 # what-the-dep
 
+## 2.2.1
+
+### Patch Changes
+
+- 9663246: Fix resolve wrong dependencies
+
 ## 2.2.0
 
 ### Minor Changes
